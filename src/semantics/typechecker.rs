@@ -167,7 +167,7 @@ fn typecheck_fn(
     typechecker.sym_table = old_sym_table;
 
     Ok(Declaration::Fn {
-        name: name.clone(),
+        name,
         ret,
         params: typechecked_params,
         body: typechecked_body,
@@ -462,16 +462,15 @@ fn typecheck_expr(
                     | BinaryExpressionKind::NotEqual
             );
 
-            if is_comparison {
-                if let (Some(lhs_ty), Some(rhs_ty)) = (&lhs_hint, &rhs_hint) {
-                    if lhs_ty != rhs_ty {
-                        return Err(TypecheckerError {
-                            msg: format!(
-                                "Comparisons require operands of the same type, got {lhs_ty:?} and {rhs_ty:?}"
-                            ),
-                        });
-                    }
-                }
+            if is_comparison
+                && let (Some(lhs_ty), Some(rhs_ty)) = (&lhs_hint, &rhs_hint)
+                && lhs_ty != rhs_ty
+            {
+                return Err(TypecheckerError {
+                    msg: format!(
+                        "Comparisons require operands of the same type, got {lhs_ty:?} and {rhs_ty:?}"
+                    ),
+                });
             }
 
             let op_hint = merge_types(lhs_hint, rhs_hint)?;
@@ -691,7 +690,7 @@ fn typecheck_init(
     init: Expression,
     expected_ty: Option<Type>,
 ) -> Result<Expression, TypecheckerError> {
-    let typechecked_init = typecheck_expr(typechecker, init.clone(), expected_ty)?;
+    let typechecked_init = typecheck_expr(typechecker, init, expected_ty)?;
 
     let actual_ty = typechecked_init.ty();
 
@@ -719,7 +718,7 @@ impl Typecheck for Param {
         );
 
         Ok(Param {
-            name: self.name.clone(),
+            name: self.name,
             ty: self.ty,
         })
     }
@@ -728,7 +727,7 @@ impl Typecheck for Param {
 fn merge_types(a: Option<Type>, b: Option<Type>) -> Result<Option<Type>, TypecheckerError> {
     match (a, b) {
         (Some(a), Some(b)) if a != b => Err(TypecheckerError {
-            msg: format!("{a:?} != {b:?}"),
+            msg: format!("Cannot merge types: {a:?} != {b:?}"),
         }),
 
         (Some(ty), _) | (_, Some(ty)) => Ok(Some(ty)),
