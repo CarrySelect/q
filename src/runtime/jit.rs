@@ -170,6 +170,8 @@ impl<'types> JitCompiler<'types> {
             eprintln!("{}", asm_txt);
         }
 
+        println!("{asm_txt}");
+
         let r = self
             .assembler
             .asm(asm_txt.to_string(), 0)
